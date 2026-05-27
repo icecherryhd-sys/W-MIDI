@@ -13,15 +13,7 @@ are still included for testing, automation, and advanced setups.
 
 ## Example use Case:
 
-1. Open a virtual Midi Port with loopMidi (https://www.tobias-erichsen.de/software/loopmidi.html)
-2. Select that Midi Port in Ableton as your output
-3. Open W-MIDI and select the same virtual Midi Port as the Input Device
-4. Configure WLED Setup and connect to it with ip + udp port (for wled setup see: https://kno.wled.ge/)
-5. Configure Color Palette for incoming Velocity's (leave standard for same Velocity colors as the Novation Launchpad)
-6. Configure LED Strip Mapping: Led Count, which base note to start from, and which channels to listen to
-7. Configure "FPS Control" (leave Frame Interval at "5ms" and Midi Burst at "64 " if unsure)
-8. Click "Save Config" to save any changes
-9. Start Bridge and enjoy! :)
+Full Example and Setup Tutorial: [W-MIDI Tutorial Guide.pdf](https://github.com/user-attachments/files/28325907/W-MIDI.Tutorial.Guide.pdf)
 
 Side Note: Stop the Bridge before making any changes and save before starting again.
 
