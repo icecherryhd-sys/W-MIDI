@@ -50,7 +50,7 @@ W-MIDI/
 ## Installation
 
 ```powershell
-cd "C:\Users\maier\Desktop\Cursor Projects\midi to wled"
+cd "C:\YOURLOCALSAVE\W-MIDI-1.0.0"
 py -3 -m pip install -r requirements.txt
 ```
 
