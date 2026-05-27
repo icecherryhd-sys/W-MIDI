@@ -1,0 +1,13 @@
+include README.md
+include README_EN.txt
+include README.txt
+include LICENSE.txt
+include CHANGELOG.md
+include RELEASE_CHECKLIST.md
+include config.example.json
+include requirements.txt
+recursive-include palettes *.txt
+recursive-include scripts *.bat
+recursive-include tools *.cs
+recursive-include packaging *.bat
+recursive-include assets *.ico *.png

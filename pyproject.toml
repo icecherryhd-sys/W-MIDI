@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "w-midi"
+version = "1.0.0"
+description = "W-MIDI translates MIDI input into WLED realtime UDP lighting frames."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { file = "LICENSE.txt" }
+authors = [
+  { name = "W-MIDI contributors" }
+]
+dependencies = [
+  "mido>=9.0.0",
+  "python-rtmidi>=1.5.0"
+]
+keywords = ["midi", "wled", "led", "lighting", "udp"]
+
+[project.urls]
+Homepage = "https://github.com/"
+
+[project.scripts]
+w-midi = "midi_wled_bridge.cli:main"
+w-midi-gui = "midi_wled_bridge.gui:main"
+w-midi-midi-tester = "midi_wled_bridge.midi_tester:main"
+
+[tool.setuptools]
+packages = ["midi_wled_bridge"]
+
+[tool.setuptools.package-data]
+midi_wled_bridge = ["py.typed"]

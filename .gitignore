@@ -1,0 +1,24 @@
+# Python cache/build
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+build/
+dist/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+
+# Local runtime/config
+config.json
+*.log
+.superpowers/
+GUI.exe
+start_gui.lnk
+release/
+_github_upload/
+_github_work/
+
+# Virtual environments
+.venv/
+venv/

@@ -1,0 +1,7 @@
+Copyright (c) 2026 W-MIDI contributors.
+
+All rights reserved.
+
+This software is provided as a private release package unless a separate
+license agreement is supplied with it. Do not redistribute, sublicense, or sell
+copies of this software without permission from the rights holder.

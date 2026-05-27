@@ -1,0 +1,15 @@
+{
+  "wled_ip": "192.168.1.100",
+  "wled_port": 21324,
+  "midi_port": "loopMIDI",
+  "led_count": 64,
+  "base_note": 36,
+  "midi_channel": "All",
+  "channel_bank_size": "",
+  "frame_interval_ms": 5,
+  "midi_read_burst": 64,
+  "color_mode": "velocity_palette",
+  "fixed_color": "0,120,255",
+  "velocity_palette_file": "palettes/velocity_palette.txt",
+  "verbose": false
+}
