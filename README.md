@@ -11,6 +11,10 @@ port.
 The desktop app is the recommended way to use W-MIDI. Command-line entry points
 are still included for testing, automation, and advanced setups.
 
+## Transparency
+
+I'm no Pro Coder or anything, everything here was made using Codex (ChatGPT).
+
 ## Example use Case:
 
 Full Example and Setup Tutorial: [W-MIDI Tutorial Guide.pdf](https://github.com/user-attachments/files/28325907/W-MIDI.Tutorial.Guide.pdf)
