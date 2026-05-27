@@ -1,3 +1,4 @@
+<img width="1254" height="1254" alt="1f5deea8-c1c6-49ff-a2bb-a5d3696aff91" src="https://github.com/user-attachments/assets/b01bc022-57f2-4b17-b5eb-662ac6917a49" />
 # W-MIDI
 
 W-MIDI translates MIDI input into WLED realtime UDP lighting frames. It is built
