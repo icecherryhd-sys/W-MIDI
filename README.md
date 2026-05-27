@@ -128,11 +128,3 @@ packaging\windows\build_w_midi_launcher.bat
 ```
 
 This creates `W-MIDI.exe` in the project root.
-
-## Verification
-
-```powershell
-py -3 -m unittest discover -s tests
-```
-
-See `RELEASE_CHECKLIST.md` before publishing a release archive.
