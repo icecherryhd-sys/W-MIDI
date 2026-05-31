@@ -22,4 +22,7 @@ _github_work/
 # Virtual environments
 .venv/
 venv/
+<<<<<<< HEAD
 .runtime/
+=======
+>>>>>>> eabdd911b25d79a2bbd5c264e3d24a69dda49ce7

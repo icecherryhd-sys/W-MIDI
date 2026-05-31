@@ -6,10 +6,17 @@ include CHANGELOG.md
 include RELEASE_CHECKLIST.md
 include config.example.json
 include requirements.txt
+<<<<<<< HEAD
 recursive-include palettes *
 recursive-include layouts *.json
 recursive-include scripts *.bat
 recursive-include tools *.cs
 recursive-include packaging *.bat
 recursive-include packaging *.ps1
+=======
+recursive-include palettes *.txt
+recursive-include scripts *.bat
+recursive-include tools *.cs
+recursive-include packaging *.bat
+>>>>>>> eabdd911b25d79a2bbd5c264e3d24a69dda49ce7
 recursive-include assets *.ico *.png

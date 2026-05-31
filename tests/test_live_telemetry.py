@@ -26,6 +26,7 @@ def make_config() -> Config:
 
 
 class LiveTelemetryTests(unittest.TestCase):
+<<<<<<< HEAD
     def test_bridge_emits_exact_led_frame_preview_when_enabled(self) -> None:
         config = make_config()
         config.emit_led_frames = True
@@ -50,6 +51,8 @@ class LiveTelemetryTests(unittest.TestCase):
         finally:
             original_socket.close()
 
+=======
+>>>>>>> eabdd911b25d79a2bbd5c264e3d24a69dda49ce7
     def test_bridge_emits_parseable_telemetry(self) -> None:
         bridge = MidiToWledBridge(make_config())
         try:

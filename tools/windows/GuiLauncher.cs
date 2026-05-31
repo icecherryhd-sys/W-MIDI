@@ -41,8 +41,13 @@ internal static class GuiLauncher
         {
             string arguments = executable.EndsWith("py.exe", StringComparison.OrdinalIgnoreCase)
                 || executable.EndsWith("pyw.exe", StringComparison.OrdinalIgnoreCase)
+<<<<<<< HEAD
                     ? "-3 -m midi_wled_bridge.qt_gui"
                     : "-m midi_wled_bridge.qt_gui";
+=======
+                    ? "-3 -m midi_wled_bridge.gui"
+                    : "-m midi_wled_bridge.gui";
+>>>>>>> eabdd911b25d79a2bbd5c264e3d24a69dda49ce7
 
             ProcessStartInfo startInfo = new ProcessStartInfo
             {

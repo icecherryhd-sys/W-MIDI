@@ -18,7 +18,10 @@ from midi_wled_bridge.palette import (
     load_velocity_palette_file,
     parse_rgb,
     parse_velocity_palette,
+<<<<<<< HEAD
     scale_palette_to_full,
+=======
+>>>>>>> eabdd911b25d79a2bbd5c264e3d24a69dda49ce7
 )
 from midi_wled_bridge.ports import print_port_list, resolve_port_name
 
@@ -29,6 +32,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--wled-ip", default="127.0.0.1", help="WLED IP address")
     parser.add_argument("--port", type=int, default=WLED_REALTIME_PORT, help="WLED UDP port")
     parser.add_argument("--midi-port", default="", help="MIDI input port name (substring allowed)")
+<<<<<<< HEAD
     parser.add_argument(
         "--virtual-midi-udp-port",
         type=int,
@@ -40,6 +44,8 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Emit compact LED frame lines for the W-MIDI desktop preview.",
     )
+=======
+>>>>>>> eabdd911b25d79a2bbd5c264e3d24a69dda49ce7
     parser.add_argument("--led-count", type=int, default=64, help="Number of LEDs")
     parser.add_argument("--base-note", type=int, default=36, help="Lowest MIDI note mapped to LED 0")
     parser.add_argument(
@@ -96,11 +102,14 @@ def build_parser() -> argparse.ArgumentParser:
         default="",
         help="Optional palette text file. Overrides --velocity-palette when set.",
     )
+<<<<<<< HEAD
     parser.add_argument(
         "--scale-velocity-palette-to-full",
         action="store_true",
         help="Scale Launchpad-style 0..63 palette RGB values proportionally to 0..255.",
     )
+=======
+>>>>>>> eabdd911b25d79a2bbd5c264e3d24a69dda49ce7
     parser.add_argument("--verbose", action="store_true", help="Verbose MIDI and mapping logs")
     return parser
 
@@ -110,8 +119,12 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 
 
 def build_config(args: argparse.Namespace) -> Config:
+<<<<<<< HEAD
     virtual_midi_udp_port = getattr(args, "virtual_midi_udp_port", None)
     midi_port = args.midi_port if virtual_midi_udp_port is not None else resolve_port_name(args.midi_port)
+=======
+    midi_port = resolve_port_name(args.midi_port)
+>>>>>>> eabdd911b25d79a2bbd5c264e3d24a69dda49ce7
     velocity_palette = args.velocity_palette
     if args.velocity_palette_file:
         palette_path = os.path.abspath(args.velocity_palette_file)
@@ -121,8 +134,11 @@ def build_config(args: argparse.Namespace) -> Config:
                 f"Loaded velocity palette from {palette_path} "
                 f"({len(velocity_palette)} entries)"
             )
+<<<<<<< HEAD
     if getattr(args, "scale_velocity_palette_to_full", False):
         velocity_palette = scale_palette_to_full(velocity_palette)
+=======
+>>>>>>> eabdd911b25d79a2bbd5c264e3d24a69dda49ce7
     return Config(
         wled_ip=args.wled_ip,
         port=args.port,
@@ -137,8 +153,11 @@ def build_config(args: argparse.Namespace) -> Config:
         verbose=args.verbose,
         frame_interval_ms=args.frame_interval_ms,
         midi_read_burst=args.midi_read_burst,
+<<<<<<< HEAD
         virtual_midi_udp_port=virtual_midi_udp_port,
         emit_led_frames=getattr(args, "emit_led_frames", False),
+=======
+>>>>>>> eabdd911b25d79a2bbd5c264e3d24a69dda49ce7
     )
 
 
@@ -158,9 +177,12 @@ def validate_args(args: argparse.Namespace) -> int | None:
     if args.midi_read_burst <= 0:
         print("--midi-read-burst must be > 0", file=sys.stderr)
         return 2
+<<<<<<< HEAD
     if args.virtual_midi_udp_port is not None and not 1 <= args.virtual_midi_udp_port <= 65535:
         print("--virtual-midi-udp-port must be 1..65535", file=sys.stderr)
         return 2
+=======
+>>>>>>> eabdd911b25d79a2bbd5c264e3d24a69dda49ce7
     return None
 
 

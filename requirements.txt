@@ -1,4 +1,9 @@
 # MIDI I/O (mido uses an RtMidi backend on Windows)
+<<<<<<< HEAD
 mido>=1.3.0
 python-rtmidi>=1.5.0
 PySide6>=6.8.0
+=======
+mido>=9.0.0
+python-rtmidi>=1.5.0
+>>>>>>> eabdd911b25d79a2bbd5c264e3d24a69dda49ce7

@@ -10,8 +10,12 @@
   "midi_read_burst": 64,
   "color_mode": "velocity_palette",
   "fixed_color": "0,120,255",
+<<<<<<< HEAD
   "velocity_palette_file": "palettes/Default",
   "scale_velocity_palette_to_full": false,
   "led_layout_positions": [],
+=======
+  "velocity_palette_file": "palettes/velocity_palette.txt",
+>>>>>>> eabdd911b25d79a2bbd5c264e3d24a69dda49ce7
   "verbose": false
 }

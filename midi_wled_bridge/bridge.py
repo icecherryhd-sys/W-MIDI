@@ -6,7 +6,11 @@ from __future__ import annotations
 import socket
 import time
 from dataclasses import dataclass
+<<<<<<< HEAD
 from typing import Callable, Dict, Iterable, List, Tuple
+=======
+from typing import Dict, List, Tuple
+>>>>>>> eabdd911b25d79a2bbd5c264e3d24a69dda49ce7
 
 import mido
 
@@ -32,6 +36,7 @@ class Config:
     verbose: bool
     frame_interval_ms: int
     midi_read_burst: int
+<<<<<<< HEAD
     virtual_midi_udp_port: int | None = None
     emit_led_frames: bool = False
 
@@ -53,6 +58,8 @@ def read_virtual_midi_messages(
             if len(messages) >= max_messages:
                 break
     return messages
+=======
+>>>>>>> eabdd911b25d79a2bbd5c264e3d24a69dda49ce7
 
 
 class MidiToWledBridge:
@@ -71,6 +78,7 @@ class MidiToWledBridge:
         self.verbose_suppressed = 0
 
     def run(self) -> None:
+<<<<<<< HEAD
         if self.cfg.virtual_midi_udp_port is not None:
             self._run_virtual_midi()
             return
@@ -116,6 +124,32 @@ class MidiToWledBridge:
 
             if processed == 0:
                 time.sleep(0.001)
+=======
+        print(f"Connecting MIDI input: {self.cfg.midi_port}")
+        with mido.open_input(self.cfg.midi_port) as in_port:
+            print(
+                f"Streaming to WLED {self.cfg.wled_ip}:{self.cfg.port} "
+                f"for {self.cfg.led_count} LEDs"
+            )
+            self.last_frame_time = time.monotonic()
+            self.render_fixed_frame_rate(force=True)
+
+            while True:
+                processed = 0
+                for message in in_port.iter_pending():
+                    if self.handle_message(message):
+                        self.telemetry_midi_messages += 1
+                    processed += 1
+                    if processed >= self.cfg.midi_read_burst:
+                        break
+
+                self.render_fixed_frame_rate()
+                self.send_keepalive_if_needed()
+                self.emit_telemetry_if_needed()
+
+                if processed == 0:
+                    time.sleep(0.001)
+>>>>>>> eabdd911b25d79a2bbd5c264e3d24a69dda49ce7
 
     def handle_message(self, message: mido.Message) -> bool:
         channel = getattr(message, "channel", None)
@@ -222,8 +256,11 @@ class MidiToWledBridge:
             payload.extend((r, g, b))
 
         self.sock.sendto(payload, (self.cfg.wled_ip, self.cfg.port))
+<<<<<<< HEAD
         if self.cfg.emit_led_frames:
             print(encode_led_frame_line(self.leds), flush=True)
+=======
+>>>>>>> eabdd911b25d79a2bbd5c264e3d24a69dda49ce7
         self.last_update = time.time()
         self.telemetry_frames += 1
 
@@ -252,9 +289,12 @@ class MidiToWledBridge:
         self.telemetry_last_emit = now
         self.telemetry_frames = 0
         self.telemetry_midi_messages = 0
+<<<<<<< HEAD
 
 
 def encode_led_frame_line(colors: Iterable[Tuple[int, int, int]]) -> str:
     return "LED_FRAME rgb=" + "".join(
         f"{red:02x}{green:02x}{blue:02x}" for red, green, blue in colors
     )
+=======
+>>>>>>> eabdd911b25d79a2bbd5c264e3d24a69dda49ce7

@@ -1,22 +1,30 @@
 import unittest
 from pathlib import Path
+<<<<<<< HEAD
 import tomllib
 
 from midi_wled_bridge import __version__
 from midi_wled_bridge import gui
 from midi_wled_bridge.qt_model import DEFAULT_BRIDGE_SETTINGS
+=======
+
+from midi_wled_bridge import gui
+>>>>>>> eabdd911b25d79a2bbd5c264e3d24a69dda49ce7
 
 
 ROOT = Path(__file__).resolve().parents[1]
 
 
 class ReleaseBrandingTests(unittest.TestCase):
+<<<<<<< HEAD
     def test_release_version_is_consistent(self) -> None:
         metadata = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
 
         self.assertEqual("1.1.0", __version__)
         self.assertEqual(__version__, metadata["project"]["version"])
 
+=======
+>>>>>>> eabdd911b25d79a2bbd5c264e3d24a69dda49ce7
     def test_public_app_name_is_w_midi(self) -> None:
         self.assertEqual("W-MIDI", gui.APP_NAME)
 
@@ -33,24 +41,31 @@ class ReleaseBrandingTests(unittest.TestCase):
             "assets/windows/w-midi.ico",
             "scripts/windows/start_w_midi.bat",
             "packaging/windows/build_w_midi_launcher.bat",
+<<<<<<< HEAD
             "packaging/windows/build_release_archive.ps1",
+=======
+>>>>>>> eabdd911b25d79a2bbd5c264e3d24a69dda49ce7
         ]
 
         missing = [path for path in expected_files if not (ROOT / path).is_file()]
 
         self.assertEqual([], missing)
 
+<<<<<<< HEAD
     def test_default_palette_is_included(self) -> None:
         palette_path = ROOT / str(DEFAULT_BRIDGE_SETTINGS["velocity_palette_file"])
 
         self.assertTrue(palette_path.is_file())
 
+=======
+>>>>>>> eabdd911b25d79a2bbd5c264e3d24a69dda49ce7
     def test_windows_launcher_build_embeds_icon(self) -> None:
         script = (ROOT / "packaging/windows/build_w_midi_launcher.bat").read_text(encoding="utf-8")
 
         self.assertIn("w-midi.ico", script)
         self.assertIn("/win32icon:", script)
 
+<<<<<<< HEAD
     def test_portable_release_build_uses_pyinstaller_one_folder_layout(self) -> None:
         script = (ROOT / "packaging/windows/build_portable_release.ps1").read_text(encoding="utf-8")
 
@@ -81,6 +96,8 @@ class ReleaseBrandingTests(unittest.TestCase):
         self.assertNotIn("Install requirements with", checklist)
         self.assertIn("build_portable_release.ps1", checklist)
 
+=======
+>>>>>>> eabdd911b25d79a2bbd5c264e3d24a69dda49ce7
     def test_public_text_uses_w_midi_branding(self) -> None:
         public_files = [
             ROOT / "README.md",

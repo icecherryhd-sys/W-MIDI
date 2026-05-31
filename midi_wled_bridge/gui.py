@@ -17,12 +17,18 @@ from tkinter import filedialog, messagebox, ttk
 
 from midi_wled_bridge import __version__
 from midi_wled_bridge.constants import WLED_REALTIME_PORT
+<<<<<<< HEAD
 from midi_wled_bridge.discovery import WledDevice, discover_wled_devices
 from midi_wled_bridge.ports import get_input_port_names
 from midi_wled_bridge.runtime import app_root, bridge_command_prefix
 from midi_wled_bridge.virtual_midi import VirtualMidiError, VirtualMidiPortManager
 
 REPO_ROOT = str(app_root())
+=======
+from midi_wled_bridge.ports import get_input_port_names
+
+REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
+>>>>>>> eabdd911b25d79a2bbd5c264e3d24a69dda49ce7
 APP_NAME = "W-MIDI"
 CONFIG_FILENAME = "config.json"
 README_TXT_FILENAME = "README_EN.txt"
@@ -77,8 +83,12 @@ DEFAULT_GUI_SETTINGS: dict[str, object] = {
     "midi_read_burst": 64,
     "color_mode": "velocity_palette",
     "fixed_color": "0,120,255",
+<<<<<<< HEAD
     "velocity_palette_file": "palettes/Default",
     "scale_velocity_palette_to_full": False,
+=======
+    "velocity_palette_file": "palettes/velocity_palette.txt",
+>>>>>>> eabdd911b25d79a2bbd5c264e3d24a69dda49ce7
     "verbose": False,
 }
 
@@ -99,12 +109,15 @@ def open_readme_file() -> None:
     os.startfile(readme_txt_path())
 
 
+<<<<<<< HEAD
 def find_available_loopback_udp_port() -> int:
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
         sock.bind(("127.0.0.1", 0))
         return int(sock.getsockname()[1])
 
 
+=======
+>>>>>>> eabdd911b25d79a2bbd5c264e3d24a69dda49ce7
 def load_settings() -> dict[str, object]:
     path = config_path()
     if not os.path.isfile(path):
@@ -131,7 +144,13 @@ def save_settings(data: dict[str, object]) -> None:
 
 def build_subprocess_argv(settings: dict[str, object]) -> list[str]:
     argv = [
+<<<<<<< HEAD
         *bridge_command_prefix(),
+=======
+        sys.executable,
+        "-m",
+        "midi_wled_bridge.cli",
+>>>>>>> eabdd911b25d79a2bbd5c264e3d24a69dda49ce7
         "--wled-ip",
         str(settings["wled_ip"]).strip(),
         "--port",
@@ -165,6 +184,7 @@ def build_subprocess_argv(settings: dict[str, object]) -> list[str]:
         abs_palette = palette_file if os.path.isabs(palette_file) else os.path.abspath(os.path.join(REPO_ROOT, palette_file))
         argv.extend(["--velocity-palette-file", abs_palette])
 
+<<<<<<< HEAD
     if settings.get("scale_velocity_palette_to_full"):
         argv.append("--scale-velocity-palette-to-full")
 
@@ -175,6 +195,10 @@ def build_subprocess_argv(settings: dict[str, object]) -> list[str]:
     virtual_midi_udp_port = settings.get("virtual_midi_udp_port")
     if virtual_midi_udp_port:
         argv.extend(["--virtual-midi-udp-port", str(int(virtual_midi_udp_port))])
+=======
+    if settings.get("verbose"):
+        argv.append("--verbose")
+>>>>>>> eabdd911b25d79a2bbd5c264e3d24a69dda49ce7
     return argv
 
 
@@ -212,12 +236,15 @@ class BridgeGuiApp:
         self._log_expanded = False
         self._popout_window: tk.Toplevel | None = None
         self._popout_log: tk.Text | None = None
+<<<<<<< HEAD
         self._discovery_window: tk.Toplevel | None = None
         self._discovery_list: tk.Listbox | None = None
         self._discovery_status: tk.StringVar | None = None
         self._discovery_devices: list[WledDevice] = []
         self._virtual_midi_udp_port = find_available_loopback_udp_port()
         self._virtual_midi_manager: VirtualMidiPortManager | None = None
+=======
+>>>>>>> eabdd911b25d79a2bbd5c264e3d24a69dda49ce7
         self._last_log_line = tk.StringVar(value="Settings are saved to config.json.")
         self._telemetry_vars = {
             "fps": tk.StringVar(value="0.0"),
@@ -469,6 +496,7 @@ class BridgeGuiApp:
         self._field(left, 1, 0, "MIDI input device", self._midi_combo)
 
         self._wled_ip = tk.StringVar()
+<<<<<<< HEAD
         ip_group = tk.Frame(left, bg=self._t["panel"])
         ip_group.columnconfigure(0, weight=1)
         ip_entry = tk.Entry(ip_group, textvariable=self._wled_ip)
@@ -485,6 +513,11 @@ class BridgeGuiApp:
             pady=4,
         ).grid(row=0, column=1, sticky="ew", padx=(8, 0))
         self._field(left, 1, 1, "WLED controller IP", ip_group)
+=======
+        ip_entry = tk.Entry(left, textvariable=self._wled_ip)
+        self._configure_entry(ip_entry)
+        self._field(left, 1, 1, "WLED controller IP", ip_entry)
+>>>>>>> eabdd911b25d79a2bbd5c264e3d24a69dda49ce7
 
         self._wled_port = tk.StringVar()
         port_entry = tk.Entry(left, textvariable=self._wled_port)
@@ -548,9 +581,12 @@ class BridgeGuiApp:
         actions.columnconfigure(1, weight=1)
         self._button(actions, "Save Config", self._save_clicked).grid(row=0, column=0, sticky="ew", padx=(0, 6))
         self._button(actions, "Reload Ports", self._reload_ports).grid(row=0, column=1, sticky="ew", padx=(6, 0))
+<<<<<<< HEAD
         self._button(actions, "Create New Midi Port", self._create_midi_port_clicked).grid(
             row=1, column=0, columnspan=2, sticky="ew", pady=(8, 0)
         )
+=======
+>>>>>>> eabdd911b25d79a2bbd5c264e3d24a69dda49ce7
 
     def _build_mapping(self, parent: tk.Frame) -> None:
         mapping = self._panel(parent, "LED / MIDI Mapping", "Configure how MIDI notes translate to LED pixels.")
@@ -864,12 +900,16 @@ class BridgeGuiApp:
 
     def _refresh_ports(self) -> tuple[str, ...]:
         try:
+<<<<<<< HEAD
             names = list(get_input_port_names())
             if self._virtual_midi_manager is not None:
                 for name in self._virtual_midi_manager.port_names():
                     if name not in names:
                         names.append(name)
             return tuple(names)
+=======
+            return tuple(get_input_port_names())
+>>>>>>> eabdd911b25d79a2bbd5c264e3d24a69dda49ce7
         except Exception as exc:
             messagebox.showerror("MIDI", f"Could not load MIDI ports: {exc}")
             return ()
@@ -881,6 +921,7 @@ class BridgeGuiApp:
             self._midi_combo.set(names[0])
         self._append_log_line(f"MIDI ports updated: {len(names)} found.")
 
+<<<<<<< HEAD
     def _get_virtual_midi_manager(self) -> VirtualMidiPortManager:
         if self._virtual_midi_manager is None:
             self._virtual_midi_manager = VirtualMidiPortManager(self._virtual_midi_udp_port)
@@ -1052,6 +1093,8 @@ class BridgeGuiApp:
         if self._discovery_status is not None:
             self._discovery_status.set(f"Selected {device.name} - {device.ip}")
 
+=======
+>>>>>>> eabdd911b25d79a2bbd5c264e3d24a69dda49ce7
     def _browse_palette(self) -> None:
         path = filedialog.askopenfilename(
             parent=self.root,
@@ -1228,8 +1271,11 @@ class BridgeGuiApp:
         if message:
             messagebox.showwarning("Validation", message)
             return
+<<<<<<< HEAD
         if self._virtual_midi_manager is not None and self._virtual_midi_manager.has_port(str(settings["midi_port"])):
             settings["virtual_midi_udp_port"] = self._virtual_midi_udp_port
+=======
+>>>>>>> eabdd911b25d79a2bbd5c264e3d24a69dda49ce7
 
         argv = build_subprocess_argv(settings)
         self._append_log_line("$ " + " ".join(argv))
@@ -1308,8 +1354,11 @@ class BridgeGuiApp:
             except OSError:
                 pass
             self._stop_reader.set()
+<<<<<<< HEAD
         if self._virtual_midi_manager is not None:
             self._virtual_midi_manager.close_all()
+=======
+>>>>>>> eabdd911b25d79a2bbd5c264e3d24a69dda49ce7
         self.root.destroy()
 
     def mainloop(self) -> None:

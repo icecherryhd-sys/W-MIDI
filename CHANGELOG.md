@@ -1,5 +1,6 @@
 # Changelog
 
+<<<<<<< HEAD
 ## 1.1.0 - 2026-05-30
 
 - Rebuilt the desktop interface as a PySide6 dashboard.
@@ -16,6 +17,8 @@
 - Added a pop-out LED layout editor with visual placement, multi-select,
   dragging, rotation, reset, JSON import, and JSON export.
 
+=======
+>>>>>>> eabdd911b25d79a2bbd5c264e3d24a69dda49ce7
 ## 1.0.0 - 2026-05-27
 
 - Standardized the public application name as "W-MIDI".
