@@ -1,4 +1,5 @@
-<img width="2172" height="724" alt="5295281c-e851-43ed-817a-e6c091905c26" src="https://github.com/user-attachments/assets/f033426c-6bf4-45ba-a1a4-c6877853ab5f" />
+<img width="2172" height="724" alt="57b1a061-0ca8-47c4-9cc5-b47049c074a8" src="https://github.com/user-attachments/assets/6b07035a-1ff7-42a7-90f0-e402aaf6f6ae" />
+
 
 # W-MIDI
 
