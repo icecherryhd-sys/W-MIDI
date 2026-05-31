@@ -1,7 +1,6 @@
-<<<<<<< HEAD
-# W-MIDI
+<img width="2172" height="724" alt="5295281c-e851-43ed-817a-e6c091905c26" src="https://github.com/user-attachments/assets/f033426c-6bf4-45ba-a1a4-c6877853ab5f" />
 
-![W-MIDI GitHub banner](assets/github/w-midi-github-banner.png)
+# W-MIDI
 
 W-MIDI connects MIDI input to WLED realtime UDP lighting. The `v1.1.0`
 desktop app supports multiple independent bridges, virtual MIDI ports, palette
