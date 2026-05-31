@@ -1,0 +1,70 @@
+Python 3 Installation
+=====================
+
+W-MIDI needs Python 3 to run. If W-MIDI does not start, or if Windows says that
+Python was not found, follow these steps.
+
+
+1. Install Python 3
+-------------------
+1. Open https://www.python.org/downloads/windows/
+2. Download the latest stable Python 3 installer for Windows.
+3. Start the installer.
+4. Important: enable "Add python.exe to PATH" on the first installer screen.
+5. Click "Install Now".
+6. Wait until the installation is finished.
+
+
+2. Check the installation
+-------------------------
+1. Open the Windows Start menu.
+2. Search for "PowerShell" and open it.
+3. Type this command and press Enter:
+
+   py -3 --version
+
+If Python is installed correctly, you should see a version number, for example:
+
+   Python 3.12.0
+
+
+3. Install W-MIDI requirements
+------------------------------
+1. Extract the W-MIDI ZIP file.
+2. Open the extracted W-MIDI folder.
+3. Click in the address bar of File Explorer.
+4. Type "powershell" and press Enter. This opens PowerShell in the W-MIDI folder.
+5. Run this command:
+
+   py -3 -m pip install -r requirements.txt
+
+Wait until the installation is finished.
+
+
+4. Start W-MIDI
+---------------
+After Python and the requirements are installed, start:
+
+   W-MIDI.exe
+
+
+Troubleshooting
+---------------
+If "py" is not recognized:
+- Restart your computer and try again.
+- Reinstall Python and make sure "Add python.exe to PATH" is enabled.
+- Try this command instead:
+
+  python -m pip install -r requirements.txt
+
+If installing requirements fails:
+- Make sure you are connected to the internet.
+- Run PowerShell as a normal user first. Administrator mode is usually not
+  required.
+- Update pip with:
+
+  py -3 -m pip install --upgrade pip
+
+Then run the requirements command again:
+
+  py -3 -m pip install -r requirements.txt
