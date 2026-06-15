@@ -12,7 +12,13 @@ def is_frozen() -> bool:
 
 def app_root() -> Path:
     if is_frozen():
-        return Path(sys.executable).resolve().parent
+        executable_path = Path(sys.executable).resolve()
+        parts = executable_path.parts
+        if ".app" in executable_path.as_posix():
+            for index, part in enumerate(parts):
+                if part.endswith(".app"):
+                    return Path(*parts[:index])
+        return executable_path.parent
     return Path(__file__).resolve().parents[1]
 
 
