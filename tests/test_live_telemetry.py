@@ -2,6 +2,7 @@ import io
 import time
 import unittest
 from contextlib import redirect_stdout
+from unittest.mock import patch
 
 from midi_wled_bridge.bridge import Config, MidiToWledBridge
 from midi_wled_bridge.gui import BridgeGuiApp
@@ -111,7 +112,8 @@ class LiveTelemetryTests(unittest.TestCase):
                 bridge.sock.close()
 
     def test_gui_updates_telemetry_labels_from_bridge_line(self) -> None:
-        app = BridgeGuiApp()
+        with patch("midi_wled_bridge.gui.get_input_port_names", return_value=["W-MIDI"]):
+            app = BridgeGuiApp()
         try:
             app._handle_bridge_output("TELEMETRY fps=60.0 midi_per_s=12.0 udp_per_s=60.0 last_frame_ms=4")
 
