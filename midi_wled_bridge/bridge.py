@@ -1,16 +1,12 @@
 #!/usr/bin/env python3
-"""Core bridge: MIDI input → buffered RGB strip → WLED UDP DRGB."""
+"""Core bridge: MIDI input â†’ buffered RGB strip â†’ WLED UDP DRGB."""
 
 from __future__ import annotations
 
 import socket
 import time
 from dataclasses import dataclass
-<<<<<<< HEAD
 from typing import Callable, Dict, Iterable, List, Tuple
-=======
-from typing import Dict, List, Tuple
->>>>>>> eabdd911b25d79a2bbd5c264e3d24a69dda49ce7
 
 import mido
 
@@ -19,6 +15,7 @@ from midi_wled_bridge.constants import (
     WLED_TIMEOUT_SECONDS,
     WLED_UDP_TIMEOUT_VALUE,
 )
+from midi_wled_bridge.serial_output import SerialWledTransport
 
 
 @dataclass
@@ -36,9 +33,19 @@ class Config:
     verbose: bool
     frame_interval_ms: int
     midi_read_burst: int
-<<<<<<< HEAD
     virtual_midi_udp_port: int | None = None
     emit_led_frames: bool = False
+    output_mode: str = "udp"
+    serial_port: str = ""
+    serial_baudrate: int = 115200
+    serial_fps: int = 60
+    serial_auto_reconnect: bool = True
+    serial_blackout_on_disconnect: bool = True
+    serial_start_delay_ms: int = 1500
+
+    def __post_init__(self) -> None:
+        if self.output_mode not in ("udp", "serial"):
+            self.output_mode = "udp"
 
 
 def read_virtual_midi_messages(
@@ -58,14 +65,12 @@ def read_virtual_midi_messages(
             if len(messages) >= max_messages:
                 break
     return messages
-=======
->>>>>>> eabdd911b25d79a2bbd5c264e3d24a69dda49ce7
 
 
 class MidiToWledBridge:
     def __init__(self, config: Config) -> None:
         self.cfg = config
-        self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.sock: socket.socket | None = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) if self.uses_udp_output else None
         self.last_update = 0.0
         self.leds: List[Tuple[int, int, int]] = [(0, 0, 0)] * self.cfg.led_count
         self.needs_update = True
@@ -73,12 +78,34 @@ class MidiToWledBridge:
         self.telemetry_started_at = time.monotonic()
         self.telemetry_last_emit = self.telemetry_started_at
         self.telemetry_frames = 0
+        self.telemetry_udp_frames = 0
+        self.telemetry_serial_frames = 0
         self.telemetry_midi_messages = 0
         self.verbose_last_emit = self.telemetry_started_at
         self.verbose_suppressed = 0
+        self.serial_transport: SerialWledTransport | None = None
+        if self.uses_serial_output:
+            self.serial_transport = SerialWledTransport(
+                port=self.cfg.serial_port,
+                baudrate=self.cfg.serial_baudrate,
+                start_delay_ms=self.cfg.serial_start_delay_ms,
+                auto_reconnect=self.cfg.serial_auto_reconnect,
+            )
+
+    @property
+    def uses_udp_output(self) -> bool:
+        return self.cfg.output_mode == "udp"
+
+    @property
+    def uses_serial_output(self) -> bool:
+        return self.cfg.output_mode == "serial"
+
+    def output_target_summary(self) -> str:
+        if self.uses_serial_output:
+            return f"output=serial serial={self.cfg.serial_port or '-'} leds={self.cfg.led_count}"
+        return f"output=udp udp={self.cfg.wled_ip}:{self.cfg.port} leds={self.cfg.led_count}"
 
     def run(self) -> None:
-<<<<<<< HEAD
         if self.cfg.virtual_midi_udp_port is not None:
             self._run_virtual_midi()
             return
@@ -102,41 +129,16 @@ class MidiToWledBridge:
         self,
         pending_messages: Callable[[], Iterable[mido.Message]],
     ) -> None:
-        print(
-            f"Streaming to WLED {self.cfg.wled_ip}:{self.cfg.port} "
-            f"for {self.cfg.led_count} LEDs"
-        )
+        print(f"Streaming to WLED {self.output_target_summary()}")
         self.last_frame_time = time.monotonic()
+        if self.serial_transport is not None:
+            self.serial_transport.connect(self.leds)
         self.render_fixed_frame_rate(force=True)
 
-        while True:
-            processed = 0
-            for message in pending_messages():
-                if self.handle_message(message):
-                    self.telemetry_midi_messages += 1
-                processed += 1
-                if processed >= self.cfg.midi_read_burst:
-                    break
-
-            self.render_fixed_frame_rate()
-            self.send_keepalive_if_needed()
-            self.emit_telemetry_if_needed()
-
-            if processed == 0:
-                time.sleep(0.001)
-=======
-        print(f"Connecting MIDI input: {self.cfg.midi_port}")
-        with mido.open_input(self.cfg.midi_port) as in_port:
-            print(
-                f"Streaming to WLED {self.cfg.wled_ip}:{self.cfg.port} "
-                f"for {self.cfg.led_count} LEDs"
-            )
-            self.last_frame_time = time.monotonic()
-            self.render_fixed_frame_rate(force=True)
-
+        try:
             while True:
                 processed = 0
-                for message in in_port.iter_pending():
+                for message in pending_messages():
                     if self.handle_message(message):
                         self.telemetry_midi_messages += 1
                     processed += 1
@@ -149,7 +151,8 @@ class MidiToWledBridge:
 
                 if processed == 0:
                     time.sleep(0.001)
->>>>>>> eabdd911b25d79a2bbd5c264e3d24a69dda49ce7
+        finally:
+            self.close_outputs()
 
     def handle_message(self, message: mido.Message) -> bool:
         channel = getattr(message, "channel", None)
@@ -242,13 +245,35 @@ class MidiToWledBridge:
             return
 
         now = time.monotonic()
-        interval_s = max(0.0, self.cfg.frame_interval_ms / 1000.0)
+        interval_ms = self.cfg.frame_interval_ms
+        if self.uses_serial_output:
+            interval_ms = max(interval_ms, int(1000 / max(1, self.cfg.serial_fps)))
+        interval_s = max(0.0, interval_ms / 1000.0)
         if force or (now - self.last_frame_time) >= interval_s:
             self.send_frame()
             self.last_frame_time = now
             self.needs_update = False
 
     def send_frame(self) -> None:
+        sent_any = False
+        if self.uses_udp_output:
+            self.send_udp_frame()
+            sent_any = True
+            self.telemetry_udp_frames += 1
+        if self.serial_transport is not None and self.uses_serial_output:
+            sent_serial = self.serial_transport.send_frame(self.leds)
+            sent_any = sent_serial or sent_any
+            if sent_serial:
+                self.telemetry_serial_frames += 1
+        if sent_any:
+            if self.cfg.emit_led_frames:
+                print(encode_led_frame_line(self.leds), flush=True)
+            self.last_update = time.time()
+            self.telemetry_frames += 1
+
+    def send_udp_frame(self) -> None:
+        if self.sock is None:
+            return
         payload = bytearray()
         payload.append(2)  # DRGB protocol
         payload.append(WLED_UDP_TIMEOUT_VALUE)
@@ -256,17 +281,19 @@ class MidiToWledBridge:
             payload.extend((r, g, b))
 
         self.sock.sendto(payload, (self.cfg.wled_ip, self.cfg.port))
-<<<<<<< HEAD
-        if self.cfg.emit_led_frames:
-            print(encode_led_frame_line(self.leds), flush=True)
-=======
->>>>>>> eabdd911b25d79a2bbd5c264e3d24a69dda49ce7
-        self.last_update = time.time()
-        self.telemetry_frames += 1
 
     def send_keepalive_if_needed(self) -> None:
         if time.time() - self.last_update > WLED_TIMEOUT_SECONDS:
             self.send_frame()
+
+    def close_outputs(self) -> None:
+        if self.serial_transport is not None:
+            if self.cfg.serial_blackout_on_disconnect and self.uses_serial_output:
+                try:
+                    self.serial_transport.send_black_frame(self.cfg.led_count)
+                except Exception as exc:  # pylint: disable=broad-except
+                    print(f"Serial blackout failed: {exc}", flush=True)
+            self.serial_transport.close()
 
     def emit_telemetry_if_needed(self, force: bool = False) -> None:
         now = time.monotonic()
@@ -276,25 +303,28 @@ class MidiToWledBridge:
         if elapsed <= 0:
             elapsed = 1.0
         fps = self.telemetry_frames / elapsed
+        udp_per_s = self.telemetry_udp_frames / elapsed
+        serial_per_s = self.telemetry_serial_frames / elapsed
         midi_per_s = self.telemetry_midi_messages / elapsed
         last_frame_ms = int(max(0.0, (time.time() - self.last_update) * 1000.0)) if self.last_update else 0
         print(
             "TELEMETRY "
             f"fps={fps:.1f} "
             f"midi_per_s={midi_per_s:.1f} "
-            f"udp_per_s={fps:.1f} "
+            f"udp_per_s={udp_per_s:.1f} "
+            f"serial_per_s={serial_per_s:.1f} "
+            f"serial_state={self.serial_transport.state if self.serial_transport else 'disabled'} "
             f"last_frame_ms={last_frame_ms}",
             flush=True,
         )
         self.telemetry_last_emit = now
         self.telemetry_frames = 0
+        self.telemetry_udp_frames = 0
+        self.telemetry_serial_frames = 0
         self.telemetry_midi_messages = 0
-<<<<<<< HEAD
 
 
 def encode_led_frame_line(colors: Iterable[Tuple[int, int, int]]) -> str:
     return "LED_FRAME rgb=" + "".join(
         f"{red:02x}{green:02x}{blue:02x}" for red, green, blue in colors
     )
-=======
->>>>>>> eabdd911b25d79a2bbd5c264e3d24a69dda49ce7

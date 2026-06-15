@@ -1,0 +1,11 @@
+{
+  "name": "W_MIDI_USB",
+  "version": "0.1.0",
+  "description": "W-MIDI USB-MIDI usermod for ESP32-S3 WLED builds.",
+  "keywords": ["wled", "esp32-s3", "usb-midi", "midi", "led"],
+  "build": {
+    "libArchive": false
+  },
+  "frameworks": ["arduino"],
+  "platforms": ["espressif32"]
+}

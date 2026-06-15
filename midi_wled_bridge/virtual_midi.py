@@ -25,6 +25,12 @@ class VirtualMidiError(RuntimeError):
     """Raised when the installed virtualMIDI driver cannot create a port."""
 
 
+LOOPMIDI_INSTALL_MESSAGE = (
+    "Could not load the virtualMIDI driver DLL. Install loopMIDI first; "
+    "the loopMIDI application does not need to be running."
+)
+
+
 @dataclass
 class _VirtualMidiPort:
     name: str
@@ -36,6 +42,16 @@ def _default_dll_loader(name: str):
     if not sys.platform.startswith("win"):
         raise VirtualMidiError("Virtual MIDI ports are only available on Windows.")
     return ctypes.WinDLL(name, use_last_error=True)
+
+
+def virtual_midi_driver_available(
+    *, dll_loader: Callable[[str], object] = _default_dll_loader
+) -> tuple[bool, str]:
+    try:
+        dll_loader(VIRTUAL_MIDI_DLL)
+    except (OSError, VirtualMidiError):
+        return False, LOOPMIDI_INSTALL_MESSAGE
+    return True, ""
 
 
 class VirtualMidiPortManager:
@@ -52,10 +68,7 @@ class VirtualMidiPortManager:
         try:
             self._dll = dll_loader(VIRTUAL_MIDI_DLL)
         except (OSError, VirtualMidiError) as exc:
-            raise VirtualMidiError(
-                "Could not load the virtualMIDI driver. Install loopMIDI first; "
-                "the loopMIDI application does not need to be running."
-            ) from exc
+            raise VirtualMidiError(LOOPMIDI_INSTALL_MESSAGE) from exc
         self._sock = socket_factory(socket.AF_INET, socket.SOCK_DGRAM)
         self._ports: dict[str, _VirtualMidiPort] = {}
         self._configure_sdk()

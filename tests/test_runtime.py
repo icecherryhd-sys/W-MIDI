@@ -24,6 +24,44 @@ class RuntimeTests(unittest.TestCase):
                 runtime.bridge_command_prefix(),
             )
 
+    def test_bridge_prefix_uses_nuitka_executable_cli_mode(self) -> None:
+        original = runtime.__dict__.get("__compiled__")
+        runtime.__dict__["__compiled__"] = object()
+        try:
+            with (
+                patch.object(sys, "frozen", False, create=True),
+                patch.object(sys, "executable", r"C:\Portable W-MIDI\W-MIDI.exe"),
+            ):
+                self.assertEqual(
+                    [r"C:\Portable W-MIDI\W-MIDI.exe", "--bridge-cli"],
+                    runtime.bridge_command_prefix(),
+                )
+        finally:
+            if original is None:
+                runtime.__dict__.pop("__compiled__", None)
+            else:
+                runtime.__dict__["__compiled__"] = original
+
+    def test_bridge_prefix_uses_argv_exe_when_nuitka_executable_is_missing(self) -> None:
+        original = runtime.__dict__.get("__compiled__")
+        runtime.__dict__["__compiled__"] = object()
+        try:
+            with (
+                patch.object(sys, "frozen", False, create=True),
+                patch.object(sys, "executable", r"C:\Missing Python\python.exe"),
+                patch.object(sys, "argv", [r"C:\Portable W-MIDI\W-MIDI.exe"]),
+                patch.object(Path, "is_file", lambda path: str(path) == r"C:\Portable W-MIDI\W-MIDI.exe"),
+            ):
+                self.assertEqual(
+                    [r"C:\Portable W-MIDI\W-MIDI.exe", "--bridge-cli"],
+                    runtime.bridge_command_prefix(),
+                )
+        finally:
+            if original is None:
+                runtime.__dict__.pop("__compiled__", None)
+            else:
+                runtime.__dict__["__compiled__"] = original
+
     def test_bridge_prefix_uses_python_module_during_source_development(self) -> None:
         with patch.object(sys, "frozen", False, create=True):
             self.assertEqual(

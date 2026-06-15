@@ -22,7 +22,15 @@ _github_work/
 # Virtual environments
 .venv/
 venv/
-<<<<<<< HEAD
 .runtime/
-=======
->>>>>>> eabdd911b25d79a2bbd5c264e3d24a69dda49ce7
+
+# Local toolchain / vendor trees
+Python-3.12.13/
+.platformio-core/
+firmware/WLED-main/
+firmware/WLED-main.zip
+
+# Firmware/web flasher build artifacts
+firmware/wled-w-midi/build/
+web-flasher/firmware/*.bin
+!web-flasher/firmware/.gitkeep
