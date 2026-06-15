@@ -1,10 +1,16 @@
 import unittest
+from unittest.mock import patch
 
 from midi_wled_bridge.gui import BridgeGuiApp
 from midi_wled_bridge import gui
 
 
 class GuiLogPopoutTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self._ports_patch = patch("midi_wled_bridge.gui.get_input_port_names", return_value=["W-MIDI"])
+        self._ports_patch.start()
+        self.addCleanup(self._ports_patch.stop)
+
     def test_log_popout_receives_new_log_lines(self) -> None:
         app = BridgeGuiApp()
         try:
