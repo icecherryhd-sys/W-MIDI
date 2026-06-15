@@ -1,5 +1,5 @@
 <img width="2172" height="724" alt="57b1a061-0ca8-47c4-9cc5-b47049c074a8" src="https://github.com/user-attachments/assets/6b07035a-1ff7-42a7-90f0-e402aaf6f6ae" />
-=======
+
 # W-MIDI
 
 W-MIDI connects MIDI input to WLED realtime UDP lighting. The `v1.2.0`
