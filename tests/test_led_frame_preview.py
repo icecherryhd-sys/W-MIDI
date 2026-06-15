@@ -7,6 +7,7 @@ from midi_wled_bridge.qt_gui import (
     decode_layout_json,
     encode_layout_json,
     mapping_grid_layout,
+    underlights_layout_positions,
     QApplication,
     MappingPreview,
     rotate_selected_positions,
@@ -34,6 +35,19 @@ class LedFramePreviewTests(unittest.TestCase):
     def test_mapping_grid_layout_handles_empty_strip(self) -> None:
         self.assertEqual([], mapping_grid_layout(0, width=620, height=170))
 
+    def test_underlights_layout_follows_bottom_right_top_left_arrow_order(self) -> None:
+        positions = underlights_layout_positions(32)
+
+        self.assertEqual(32, len(positions))
+        self.assertTrue(all(positions[index][1] > 0.75 for index in range(8)))
+        self.assertLess(positions[0][0], positions[7][0])
+        self.assertTrue(all(positions[index][0] > 0.75 for index in range(8, 16)))
+        self.assertGreater(positions[8][1], positions[15][1])
+        self.assertTrue(all(positions[index][1] < 0.25 for index in range(16, 24)))
+        self.assertGreater(positions[16][0], positions[23][0])
+        self.assertTrue(all(positions[index][0] < 0.25 for index in range(24, 32)))
+        self.assertLess(positions[24][1], positions[31][1])
+
     def test_custom_mapping_layout_places_square_tiles_at_normalized_positions(self) -> None:
         layout = custom_mapping_layout([(0.25, 0.25), (0.75, 0.75)], width=800, height=500)
 
@@ -57,7 +71,7 @@ class LedFramePreviewTests(unittest.TestCase):
 
         self.assertEqual([(0.5, 0.0), (0.5, 0.5), (0.9, 0.9)], rotated)
 
-    def test_reset_layout_rebuilds_automatic_grid_positions(self) -> None:
+    def test_reset_layout_rebuilds_standard_underlights_positions(self) -> None:
         QApplication.instance() or QApplication([])
         preview = MappingPreview()
         preview.resize(620, 170)
@@ -66,11 +80,7 @@ class LedFramePreviewTests(unittest.TestCase):
 
         preview.reset_layout()
 
-        expected = [
-            ((tile.x + tile.size / 2) / preview.width(), (tile.y + tile.size / 2) / preview.height())
-            for tile in mapping_grid_layout(4, preview.width(), preview.height())
-        ]
-        self.assertEqual(expected, preview.custom_positions)
+        self.assertEqual(underlights_layout_positions(4), preview.custom_positions)
 
 
 if __name__ == "__main__":

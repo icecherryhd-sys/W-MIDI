@@ -26,7 +26,6 @@ def make_config() -> Config:
 
 
 class LiveTelemetryTests(unittest.TestCase):
-<<<<<<< HEAD
     def test_bridge_emits_exact_led_frame_preview_when_enabled(self) -> None:
         config = make_config()
         config.emit_led_frames = True
@@ -51,14 +50,13 @@ class LiveTelemetryTests(unittest.TestCase):
         finally:
             original_socket.close()
 
-=======
->>>>>>> eabdd911b25d79a2bbd5c264e3d24a69dda49ce7
     def test_bridge_emits_parseable_telemetry(self) -> None:
         bridge = MidiToWledBridge(make_config())
         try:
             bridge.telemetry_started_at = time.monotonic() - 1.1
             bridge.telemetry_last_emit = bridge.telemetry_started_at
             bridge.telemetry_frames = 3
+            bridge.telemetry_udp_frames = 3
             bridge.telemetry_midi_messages = 5
 
             output = io.StringIO()
@@ -70,9 +68,47 @@ class LiveTelemetryTests(unittest.TestCase):
             self.assertIn("fps=", line)
             self.assertIn("midi_per_s=", line)
             self.assertIn("udp_per_s=", line)
+            self.assertIn("serial_per_s=", line)
             self.assertIn("last_frame_ms=", line)
         finally:
-            bridge.sock.close()
+            if bridge.sock is not None:
+                bridge.sock.close()
+
+    def test_serial_mode_telemetry_reports_zero_udp_and_serial_frames(self) -> None:
+        config = make_config()
+        config.output_mode = "serial"
+        config.serial_port = "COM4"
+        bridge = MidiToWledBridge(config)
+        try:
+            bridge.telemetry_started_at = time.monotonic() - 1.0
+            bridge.telemetry_last_emit = bridge.telemetry_started_at
+            bridge.telemetry_frames = 3
+            bridge.telemetry_serial_frames = 3
+
+            output = io.StringIO()
+            with redirect_stdout(output):
+                bridge.emit_telemetry_if_needed(force=True)
+
+            line = output.getvalue()
+            self.assertIn("udp_per_s=0.0", line)
+            self.assertIn("serial_per_s=3.0", line)
+        finally:
+            if bridge.sock is not None:
+                bridge.sock.close()
+
+    def test_serial_output_summary_does_not_show_udp_target(self) -> None:
+        config = make_config()
+        config.output_mode = "serial"
+        config.serial_port = "COM4"
+        bridge = MidiToWledBridge(config)
+        try:
+            summary = bridge.output_target_summary()
+
+            self.assertEqual("output=serial serial=COM4 leds=8", summary)
+            self.assertNotIn("udp=", summary)
+        finally:
+            if bridge.sock is not None:
+                bridge.sock.close()
 
     def test_gui_updates_telemetry_labels_from_bridge_line(self) -> None:
         app = BridgeGuiApp()

@@ -10,6 +10,7 @@ from pathlib import Path
 DEFAULT_BRIDGE_SETTINGS: dict[str, object] = {
     "wled_ip": "192.168.1.100",
     "wled_port": 21324,
+    "output_mode": "udp",
     "midi_port": "loopMIDI",
     "led_count": 64,
     "base_note": 36,
@@ -23,6 +24,15 @@ DEFAULT_BRIDGE_SETTINGS: dict[str, object] = {
     "scale_velocity_palette_to_full": False,
     "led_layout_positions": [],
     "verbose": False,
+    "serial_port": "",
+    "serial_port_vid": "",
+    "serial_port_pid": "",
+    "serial_port_serial_number": "",
+    "serial_baudrate": 115200,
+    "serial_fps": 60,
+    "serial_auto_reconnect": True,
+    "serial_blackout_on_disconnect": True,
+    "serial_start_delay_ms": 1500,
 }
 
 

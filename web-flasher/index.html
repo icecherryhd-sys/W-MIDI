@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>W-MIDI USB Installer</title>
+    <script
+      type="module"
+      src="https://unpkg.com/esp-web-tools@10/dist/web/install-button.js?module"
+    ></script>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #050505;
+        --card: #1f1f1f;
+        --card-soft: #272727;
+        --text: #ffffff;
+        --muted: #b8b8b8;
+        --accent: #9cff3d;
+        --accent-2: #ff9f1c;
+        --border: #383838;
+        --esp-tools-button-color: var(--accent);
+        --esp-tools-button-text-color: #050505;
+        --esp-tools-button-border-radius: 999px;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        background:
+          radial-gradient(circle at 12% 18%, rgba(156, 255, 61, 0.18), transparent 26rem),
+          radial-gradient(circle at 88% 80%, rgba(255, 159, 28, 0.14), transparent 24rem),
+          var(--bg);
+        color: var(--text);
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        padding: 28px;
+      }
+
+      main {
+        width: min(920px, 100%);
+        border: 1px solid var(--border);
+        border-radius: 28px;
+        background: linear-gradient(145deg, rgba(31, 31, 31, 0.96), rgba(14, 14, 14, 0.98));
+        box-shadow: 0 24px 80px rgba(0, 0, 0, 0.55);
+        padding: clamp(26px, 5vw, 54px);
+      }
+
+      .topline {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        color: var(--accent);
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        font-size: 13px;
+      }
+
+      .mark {
+        width: 34px;
+        height: 34px;
+        display: grid;
+        place-items: center;
+        border-radius: 50%;
+        background: var(--accent);
+        color: #050505;
+        font-weight: 950;
+      }
+
+      h1 {
+        max-width: 760px;
+        margin: 26px 0 16px;
+        font-size: clamp(36px, 7vw, 72px);
+        line-height: 0.95;
+        letter-spacing: -0.06em;
+      }
+
+      p {
+        margin: 0;
+        color: var(--muted);
+        line-height: 1.6;
+        font-size: 17px;
+      }
+
+      .panel {
+        margin-top: 32px;
+        display: grid;
+        grid-template-columns: 1.1fr 0.9fr;
+        gap: 22px;
+      }
+
+      .box {
+        border: 1px solid var(--border);
+        border-radius: 22px;
+        background: rgba(255, 255, 255, 0.035);
+        padding: 22px;
+      }
+
+      .box h2 {
+        margin: 0 0 14px;
+        font-size: 18px;
+      }
+
+      ol {
+        margin: 0;
+        padding-left: 20px;
+        color: var(--muted);
+        line-height: 1.75;
+      }
+
+      esp-web-install-button {
+        display: block;
+        margin-top: 18px;
+      }
+
+      button[slot="activate"] {
+        width: 100%;
+        border: 0;
+        border-radius: 999px;
+        padding: 17px 22px;
+        background: var(--accent);
+        color: #050505;
+        font: inherit;
+        font-weight: 900;
+        cursor: pointer;
+        box-shadow: 0 0 30px rgba(156, 255, 61, 0.22);
+      }
+
+      .warning {
+        border-color: rgba(255, 159, 28, 0.35);
+        background: rgba(255, 159, 28, 0.08);
+      }
+
+      code {
+        color: #fff;
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 8px;
+        padding: 2px 6px;
+      }
+
+      @media (max-width: 760px) {
+        .panel {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <div class="topline"><span class="mark">W</span> W-MIDI Firmware Flash</div>
+      <h1>Install W-MIDI USB auf deinem ESP32-S3.</h1>
+      <p>
+        Verbinde den ESP32-S3 per USB, öffne diese Seite in Chrome oder Edge und flashe die Custom-WLED-Firmware direkt im Browser.
+      </p>
+
+      <section class="panel" aria-label="Installer">
+        <div class="box">
+          <h2>Flashen</h2>
+          <p>
+            Der Installer wählt automatisch die ESP32-S3 Firmware aus dem Manifest aus.
+          </p>
+          <esp-web-install-button manifest="manifest.json">
+            <button slot="activate">ESP32-S3 auswählen und installieren</button>
+            <span slot="unsupported">Bitte Chrome oder Edge mit Web Serial nutzen.</span>
+            <span slot="not-allowed">Diese Seite muss über HTTPS oder localhost laufen.</span>
+          </esp-web-install-button>
+        </div>
+
+        <div class="box warning">
+          <h2>Vor dem Start</h2>
+          <ol>
+            <li>ESP32-S3 per USB verbinden.</li>
+            <li>Boot-Taste halten, falls das Board nicht erkannt wird.</li>
+            <li>Firmware-Datei muss unter <code>firmware/w-midi-usb-esp32s3-merged.bin</code> liegen.</li>
+          </ol>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

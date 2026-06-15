@@ -3,10 +3,7 @@
 from __future__ import annotations
 
 import argparse
-<<<<<<< HEAD
 import re
-=======
->>>>>>> eabdd911b25d79a2bbd5c264e3d24a69dda49ce7
 from typing import Dict, List, Tuple
 
 
@@ -69,15 +66,12 @@ def load_velocity_palette_file(path: str) -> Dict[int, Tuple[int, int, int]]:
         if line:
             cleaned_parts.append(line)
 
-<<<<<<< HEAD
     if cleaned_parts and all(":" not in part for part in cleaned_parts):
         try:
             return _parse_zero_based_space_palette(cleaned_parts)
         except argparse.ArgumentTypeError as exc:
             raise RuntimeError(f"Invalid velocity palette in '{path}': {exc}") from exc
 
-=======
->>>>>>> eabdd911b25d79a2bbd5c264e3d24a69dda49ce7
     normalized = ";".join(cleaned_parts).replace("\n", ";")
     try:
         return parse_velocity_palette(normalized)
@@ -85,7 +79,6 @@ def load_velocity_palette_file(path: str) -> Dict[int, Tuple[int, int, int]]:
         raise RuntimeError(f"Invalid velocity palette in '{path}': {exc}") from exc
 
 
-<<<<<<< HEAD
 def scale_palette_to_full(
     palette: Dict[int, Tuple[int, int, int]],
 ) -> Dict[int, Tuple[int, int, int]]:
@@ -116,8 +109,6 @@ def _parse_zero_based_space_palette(lines: List[str]) -> Dict[int, Tuple[int, in
     return mapping
 
 
-=======
->>>>>>> eabdd911b25d79a2bbd5c264e3d24a69dda49ce7
 def default_builtin_palette() -> Dict[int, Tuple[int, int, int]]:
     return parse_velocity_palette(
         "1:0,0,40;32:0,120,255;64:255,140,0;96:255,0,90;127:255,255,255"

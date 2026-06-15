@@ -1,7 +1,7 @@
 import ctypes
 import unittest
 
-from midi_wled_bridge.virtual_midi import VirtualMidiPortManager
+from midi_wled_bridge.virtual_midi import VirtualMidiPortManager, virtual_midi_driver_available
 
 
 class FakeFunction:
@@ -72,6 +72,20 @@ class VirtualMidiPortManagerTests(unittest.TestCase):
         self.assertEqual([(1234,), (1234,)], self.dll.virtualMIDIClosePort.calls)
         self.assertTrue(self.sock.closed)
         self.assertEqual((), self.manager.port_names())
+
+    def test_driver_available_reports_missing_virtualmidi_dll(self) -> None:
+        available, message = virtual_midi_driver_available(
+            dll_loader=lambda _name: (_ for _ in ()).throw(OSError("missing"))
+        )
+
+        self.assertFalse(available)
+        self.assertIn("Install loopMIDI", message)
+
+    def test_driver_available_accepts_loadable_virtualmidi_dll(self) -> None:
+        available, message = virtual_midi_driver_available(dll_loader=lambda _name: self.dll)
+
+        self.assertTrue(available)
+        self.assertEqual("", message)
 
 
 if __name__ == "__main__":

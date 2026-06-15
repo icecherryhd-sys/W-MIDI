@@ -31,12 +31,15 @@ def find_available_loopback_udp_port() -> int:
 
 
 def build_subprocess_argv(settings: dict[str, object]) -> list[str]:
+    output_mode = "serial" if str(settings.get("output_mode") or "udp") == "serial" else "udp"
     argv = [
         *bridge_command_prefix(),
         "--wled-ip",
         str(settings["wled_ip"]).strip(),
         "--port",
         str(int(settings["wled_port"])),
+        "--output-mode",
+        output_mode,
         "--midi-port",
         str(settings["midi_port"]).strip(),
         "--led-count",
@@ -52,6 +55,24 @@ def build_subprocess_argv(settings: dict[str, object]) -> list[str]:
         "--fixed-color",
         str(settings["fixed_color"]).strip(),
     ]
+
+    if output_mode == "serial":
+        argv.extend(
+            [
+                "--serial-port",
+                str(settings.get("serial_port") or "").strip(),
+                "--serial-baudrate",
+                str(int(settings.get("serial_baudrate") or 115200)),
+                "--serial-fps",
+                str(int(settings.get("serial_fps") or 60)),
+                "--serial-start-delay-ms",
+                str(int(settings.get("serial_start_delay_ms") or 1500)),
+            ]
+        )
+        if not settings.get("serial_auto_reconnect", True):
+            argv.append("--no-serial-auto-reconnect")
+        if not settings.get("serial_blackout_on_disconnect", True):
+            argv.append("--serial-leave-on-disconnect")
 
     midi_channel = str(settings.get("midi_channel") or "All").strip()
     if midi_channel and midi_channel.lower() != "all":

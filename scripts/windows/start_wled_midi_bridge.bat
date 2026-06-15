@@ -13,11 +13,7 @@ set "LED_COUNT=64"
 set "BASE_NOTE=36"
 set "COLOR_MODE=velocity_palette"
 set "FIXED_COLOR=0,120,255"
-<<<<<<< HEAD
 set "VELOCITY_PALETTE_FILE=%REPO_ROOT%\palettes\Default"
-=======
-set "VELOCITY_PALETTE_FILE=%REPO_ROOT%\palettes\velocity_palette.txt"
->>>>>>> eabdd911b25d79a2bbd5c264e3d24a69dda49ce7
 set "VELOCITY_PALETTE=3:255,255,255;5:255,0,0;10:0,120,255;20:255,140,0;30:0,255,120"
 set "FRAME_INTERVAL_MS=5"
 set "MIDI_READ_BURST=64"

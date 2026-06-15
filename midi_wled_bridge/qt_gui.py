@@ -8,6 +8,7 @@ import json
 import socket
 import subprocess
 import sys
+import time
 from dataclasses import dataclass
 from math import ceil
 from pathlib import Path
@@ -57,7 +58,14 @@ from midi_wled_bridge.discovery import discover_wled_devices
 from midi_wled_bridge.palette import load_velocity_palette_file, scale_palette_to_full
 from midi_wled_bridge.qt_controller import BridgeProcessController
 from midi_wled_bridge.qt_model import BridgeInstance, BridgeWorkspace
-from midi_wled_bridge.virtual_midi import VirtualMidiError, VirtualMidiPortManager
+from midi_wled_bridge.serial_output import (
+    SerialPortInfo,
+    build_serial_test_frame,
+    describe_serial_error,
+    describe_serial_port,
+    list_serial_ports,
+)
+from midi_wled_bridge.virtual_midi import VirtualMidiError, VirtualMidiPortManager, virtual_midi_driver_available
 
 CONFIG_PATH = Path(REPO_ROOT) / "config.json"
 LIME = "#a8ff4f"
@@ -382,6 +390,34 @@ def custom_mapping_layout(
     ]
 
 
+def underlights_layout_positions(count: int) -> list[tuple[float, float]]:
+    if count <= 0:
+        return []
+    side_counts = [count // 4] * 4
+    for index in range(count % 4):
+        side_counts[index] += 1
+
+    left, right = 0.16, 0.84
+    top, bottom = 0.16, 0.84
+    segments = (
+        ((left, bottom), (right, bottom)),
+        ((right, bottom), (right, top)),
+        ((right, top), (left, top)),
+        ((left, top), (left, bottom)),
+    )
+    positions: list[tuple[float, float]] = []
+    for side_count, ((start_x, start_y), (end_x, end_y)) in zip(side_counts, segments):
+        for item in range(side_count):
+            progress = (item + 0.5) / max(1, side_count)
+            positions.append(
+                (
+                    start_x + (end_x - start_x) * progress,
+                    start_y + (end_y - start_y) * progress,
+                )
+            )
+    return positions
+
+
 def encode_layout_json(positions: list[tuple[float, float]]) -> str:
     return json.dumps(
         {
@@ -479,13 +515,7 @@ class MappingPreview(QWidget):
 
     def set_editable(self, editable: bool) -> None:
         if editable and len(self.custom_positions) != self.led_count:
-            self.custom_positions = [
-                (
-                    (tile.x + tile.size / 2) / max(1, self.width()),
-                    (tile.y + tile.size / 2) / max(1, self.height()),
-                )
-                for tile in mapping_grid_layout(self.led_count, self.width(), self.height())
-            ]
+            self.custom_positions = underlights_layout_positions(self.led_count)
             self.positionsChanged.emit(list(self.custom_positions))
         self.editable = editable
         self.setCursor(Qt.CursorShape.OpenHandCursor if editable else Qt.CursorShape.ArrowCursor)
@@ -494,7 +524,7 @@ class MappingPreview(QWidget):
     def _tiles(self) -> list[MappingTile]:
         if len(self.custom_positions) == self.led_count:
             return custom_mapping_layout(self.custom_positions, self.width(), self.height())
-        return mapping_grid_layout(self.led_count, self.width(), self.height())
+        return custom_mapping_layout(underlights_layout_positions(self.led_count), self.width(), self.height())
 
     def mousePressEvent(self, event: QMouseEvent) -> None:  # noqa: N802 - Qt naming
         if not self.editable or event.button() != Qt.MouseButton.LeftButton:
@@ -564,13 +594,7 @@ class MappingPreview(QWidget):
         self.update()
 
     def reset_layout(self) -> None:
-        self.custom_positions = [
-            (
-                (tile.x + tile.size / 2) / max(1, self.width()),
-                (tile.y + tile.size / 2) / max(1, self.height()),
-            )
-            for tile in mapping_grid_layout(self.led_count, self.width(), self.height())
-        ]
+        self.custom_positions = underlights_layout_positions(self.led_count)
         self.selected_indexes.clear()
         self.positionsChanged.emit(list(self.custom_positions))
         self.update()
@@ -712,6 +736,7 @@ class MainWindow(QMainWindow):
         self.preview_frames: dict[str, list[tuple[int, int, int]]] = {}
         self.mapping_popouts: dict[str, MappingPopout] = {}
         self.fields: dict[str, QWidget] = {}
+        self.serial_port_infos: dict[str, SerialPortInfo] = {}
         self._build()
         self._rebuild_instance_buttons()
         self._load_selected()
@@ -813,21 +838,91 @@ class MainWindow(QMainWindow):
         return card, form
 
     def _build_connection_card(self) -> Card:
-        card, form = self._form_card("CONNECTION SETTINGS")
+        card = Card("CONNECTION SETTINGS")
+        self.connection_summary = QLabel("Wireless")
+        self.connection_summary.setObjectName("muted")
+        card.layout.addWidget(self.connection_summary)
+
+        card_form = QFormLayout()
+        card_form.setSpacing(10)
+        card_form.setLabelAlignment(Qt.AlignmentFlag.AlignLeft)
         self.midi_combo = self._combo("midi_port", [])
-        form.addRow("MIDI INPUT", self.midi_combo)
-        form.addRow("WLED IP", self._line("wled_ip"))
-        form.addRow("UDP PORT", self._spin("wled_port", 1, 65535))
-        card.layout.addWidget(ConnectionPreview())
-        test = QPushButton("Test Connection")
-        test.clicked.connect(self._test_connection)
-        card.layout.addWidget(test)
-        find = QPushButton("Find WLED")
-        find.clicked.connect(self._find_wled)
-        card.layout.addWidget(find)
-        create_port = QPushButton("Create New Midi Port")
+        card_form.addRow("MIDI INPUT", self.midi_combo)
+        card.layout.addLayout(card_form)
+
+        setup_buttons = QHBoxLayout()
+        wireless_setup = QPushButton("Wireless Setup")
+        wireless_setup.clicked.connect(self._open_wireless_setup)
+        setup_buttons.addWidget(wireless_setup)
+        wired_setup = QPushButton("Wired Setup")
+        wired_setup.clicked.connect(self._open_wired_setup)
+        setup_buttons.addWidget(wired_setup)
+        card.layout.addLayout(setup_buttons)
+
+        self.test_connection_button = QPushButton("Test Connection")
+        self.test_connection_button.clicked.connect(self._test_connection)
+        card.layout.addWidget(self.test_connection_button)
+        create_port = QPushButton("Create Midi Port")
         create_port.clicked.connect(self._create_virtual_port)
         card.layout.addWidget(create_port)
+        self.connection_test_status = QLabel("Wireless mode sends WLED UDP realtime packets.")
+        self.connection_test_status.setObjectName("muted")
+        card.layout.addWidget(self.connection_test_status)
+
+        self.output_mode_combo = self._combo("output_mode", ["Wireless", "Wired"])
+        self.output_mode_combo.currentTextChanged.connect(self._refresh_connection_mode)
+
+        self.wireless_settings_dialog = QDialog(self)
+        self.wireless_settings_dialog.setWindowTitle("Wireless Setup")
+        self.wireless_settings_dialog.setMinimumSize(460, 260)
+        wireless_layout = QVBoxLayout(self.wireless_settings_dialog)
+        wireless_layout.setContentsMargins(18, 16, 18, 16)
+        wireless_layout.setSpacing(12)
+        wireless_form = QFormLayout()
+        wireless_form.setSpacing(10)
+        wireless_form.setLabelAlignment(Qt.AlignmentFlag.AlignLeft)
+        wireless_layout.addLayout(wireless_form)
+        wireless_form.addRow("WLED IP", self._line("wled_ip"))
+        wireless_form.addRow("UDP PORT", self._spin("wled_port", 1, 65535))
+        self.find_wled_button = QPushButton("Find WLED")
+        self.find_wled_button.clicked.connect(self._find_wled)
+        wireless_layout.addWidget(self.find_wled_button)
+        wireless_save = QPushButton("Save")
+        wireless_save.clicked.connect(self._save_wireless_setup)
+        wireless_layout.addWidget(wireless_save)
+
+        self.wireless_panel = QWidget()
+
+        self.wired_settings_dialog = QDialog(self)
+        self.wired_settings_dialog.setWindowTitle("Wired Setup")
+        self.wired_settings_dialog.setMinimumSize(520, 360)
+        wired_layout = QVBoxLayout(self.wired_settings_dialog)
+        wired_layout.setContentsMargins(18, 16, 18, 16)
+        wired_layout.setSpacing(12)
+        self.wired_panel = QWidget()
+        wired_form = QFormLayout(self.wired_panel)
+        wired_form.setSpacing(10)
+        wired_form.setLabelAlignment(Qt.AlignmentFlag.AlignLeft)
+        wired_form.setContentsMargins(0, 0, 0, 0)
+        self.serial_combo = self._combo("serial_port", [])
+        self.serial_combo.setEditable(True)
+        wired_form.addRow("COM PORT", self.serial_combo)
+        wired_form.addRow("BAUDRATE", self._combo("serial_baudrate", ["115200", "230400", "460800", "921600"]))
+        wired_form.addRow("SERIAL FPS", self._combo("serial_fps", ["30", "60", "90"]))
+        wired_form.addRow("START DELAY MS", self._spin("serial_start_delay_ms", 0, 5000))
+        self.serial_auto_reconnect = QCheckBox("Auto reconnect serial port")
+        self.fields["serial_auto_reconnect"] = self.serial_auto_reconnect
+        wired_form.addRow("", self.serial_auto_reconnect)
+        self.serial_blackout_on_disconnect = QCheckBox("Send black frame when disconnecting")
+        self.fields["serial_blackout_on_disconnect"] = self.serial_blackout_on_disconnect
+        wired_form.addRow("", self.serial_blackout_on_disconnect)
+        wired_layout.addWidget(self.wired_panel)
+        self.find_com_button = QPushButton("Find COM Ports")
+        self.find_com_button.clicked.connect(self._reload_serial_ports)
+        wired_layout.addWidget(self.find_com_button)
+        wired_save = QPushButton("Save")
+        wired_save.clicked.connect(self._save_wired_setup)
+        wired_layout.addWidget(wired_save)
         return card
 
     def _build_color_card(self) -> Card:
@@ -885,14 +980,9 @@ class MainWindow(QMainWindow):
         self.mapping_preview = MappingPreview()
         led_count.valueChanged.connect(self.mapping_preview.set_led_count)
         led_count.valueChanged.connect(self._mapping_led_count_changed)
-        mapping_preview = QWidget()
-        mapping_preview_layout = QGridLayout(mapping_preview)
-        mapping_preview_layout.setContentsMargins(0, 0, 0, 0)
-        mapping_preview_layout.addWidget(self.mapping_preview, 0, 0)
-        popout = QPushButton("POP OUT")
+        popout = QPushButton("Edit Custom Led Layout")
         popout.clicked.connect(self._open_mapping_popout)
-        mapping_preview_layout.addWidget(popout, 0, 0, Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignBottom)
-        card.layout.addWidget(mapping_preview)
+        card.layout.addWidget(popout)
         return card
 
     def _build_execution_card(self) -> Card:
@@ -913,8 +1003,9 @@ class MainWindow(QMainWindow):
 
         metrics = QGridLayout()
         self.metric_labels: dict[str, QLabel] = {}
+        self.metric_caption_labels: dict[str, QLabel] = {}
         for column, (key, value, caption, color) in enumerate(
-            (("fps", "0.0", "FPS", LIME), ("midi_per_s", "0.0", "MIDI / SEC", ORANGE), ("udp_per_s", "0.0", "UDP / SEC", "#ffffff"))
+            (("fps", "0.0", "FPS", LIME), ("midi_per_s", "0.0", "MIDI / SEC", ORANGE), ("output_per_s", "0.0", "OUT / SEC", "#ffffff"))
         ):
             number = QLabel(value)
             number.setStyleSheet(f"color: {color}; font-size: 24px; font-weight: 900;")
@@ -923,6 +1014,7 @@ class MainWindow(QMainWindow):
             label = QLabel(caption)
             label.setObjectName("muted")
             metrics.addWidget(label, 1, column)
+            self.metric_caption_labels[key] = label
         card.layout.addLayout(metrics)
 
         start = QPushButton("START BRIDGE")
@@ -972,7 +1064,14 @@ class MainWindow(QMainWindow):
         if instance_id == self.workspace.selected_instance_id:
             if line.startswith("TELEMETRY "):
                 values = dict(part.split("=", 1) for part in line.split()[1:] if "=" in part)
+                serial_active = values.get("serial_state") not in (None, "disabled")
+                if "output_per_s" in self.metric_labels:
+                    output_key = "serial_per_s" if serial_active else "udp_per_s"
+                    self.metric_labels["output_per_s"].setText(values.get(output_key, "0.0"))
+                    self.metric_caption_labels["output_per_s"].setText("SERIAL / SEC" if serial_active else "UDP / SEC")
                 for key, label in self.metric_labels.items():
+                    if key == "output_per_s":
+                        continue
                     if key in values:
                         label.setText(values[key])
             else:
@@ -1040,6 +1139,51 @@ class MainWindow(QMainWindow):
     def _current(self) -> BridgeInstance:
         return self.workspace.selected()
 
+    def _display_output_mode(self, stored: object) -> str:
+        return "Wired" if str(stored).lower() in ("serial", "wired") else "Wireless"
+
+    def _stored_output_mode(self) -> str:
+        return "serial" if self.output_mode_combo.currentText() == "Wired" else "udp"
+
+    def _open_wireless_setup(self) -> None:
+        self.output_mode_combo.setCurrentText("Wireless")
+        self._reload_ports()
+        self._refresh_connection_mode()
+        self.wireless_settings_dialog.show()
+        self.wireless_settings_dialog.raise_()
+        self.wireless_settings_dialog.activateWindow()
+
+    def _open_wired_setup(self) -> None:
+        self.output_mode_combo.setCurrentText("Wired")
+        self._reload_ports()
+        self._refresh_connection_mode()
+        self.wired_settings_dialog.show()
+        self.wired_settings_dialog.raise_()
+        self.wired_settings_dialog.activateWindow()
+
+    def _save_wireless_setup(self) -> None:
+        self.output_mode_combo.setCurrentText("Wireless")
+        self._save()
+        self.wireless_settings_dialog.accept()
+
+    def _save_wired_setup(self) -> None:
+        self.output_mode_combo.setCurrentText("Wired")
+        self._save()
+        self.wired_settings_dialog.accept()
+
+    def _refresh_connection_mode(self) -> None:
+        wired = self.output_mode_combo.currentText() == "Wired"
+        self.test_connection_button.setText("Test Wired Connection" if wired else "Test Wireless Connection")
+        self.connection_summary.setText(
+            f"Wired: {self.serial_combo.currentData() or self.serial_combo.currentText() or 'no COM port selected'}"
+            if wired
+            else f"Wireless: {self.fields['wled_ip'].text()}:{self.fields['wled_port'].value()}"  # type: ignore[union-attr]
+        )
+        if wired:
+            self.connection_test_status.setText("Set the same baudrate in WLED Sync Interfaces / Serial.")
+        else:
+            self.connection_test_status.setText("Wireless mode sends WLED UDP realtime packets.")
+
     def _load_selected(self) -> None:
         instance = self._current()
         self.instance_title.setText(instance.name.upper())
@@ -1054,14 +1198,27 @@ class MainWindow(QMainWindow):
                 text = str(value)
                 if key == "velocity_palette_file":
                     text = normalize_palette_choice(text)
-                widget.setCurrentText(text)
+                if key == "output_mode":
+                    widget.setCurrentText(self._display_output_mode(value))
+                elif key == "serial_port":
+                    index = widget.findData(text)
+                    if index >= 0:
+                        widget.setCurrentIndex(index)
+                    else:
+                        widget.setCurrentText(text)
+                else:
+                    widget.setCurrentText(text)
             elif isinstance(widget, QCheckBox):
                 widget.setChecked(bool(value))
         self.log.setPlainText("\n".join(instance.log_lines))
         self.mapping_preview.set_led_count(int(instance.settings.get("led_count", 0) or 0))
         self.mapping_preview.set_colors(self.preview_frames.get(instance.id, []))
+        palette_file_widget = self.fields["velocity_palette_file"]
+        if isinstance(palette_file_widget, QComboBox):
+            self.color_grid_preview.set_palette_file(palette_file_widget.currentText())
         self._refresh_palette_scale()
         self._refresh_status()
+        self._refresh_connection_mode()
 
     def _set_palette_scale_to_full(self, enabled: bool) -> None:
         self._store_selected()
@@ -1085,9 +1242,20 @@ class MainWindow(QMainWindow):
             elif isinstance(widget, QSpinBox):
                 settings[key] = widget.value()
             elif isinstance(widget, QComboBox):
-                settings[key] = widget.currentText()
+                if key == "output_mode":
+                    settings[key] = self._stored_output_mode()
+                elif key == "serial_port" and widget.currentData():
+                    settings[key] = str(widget.currentData())
+                else:
+                    settings[key] = widget.currentText()
             elif isinstance(widget, QCheckBox):
                 settings[key] = widget.isChecked()
+        selected_port = str(settings.get("serial_port") or "")
+        info = self.serial_port_infos.get(selected_port)
+        if info is not None:
+            settings["serial_port_vid"] = f"{info.vid:04X}" if info.vid is not None else ""
+            settings["serial_port_pid"] = f"{info.pid:04X}" if info.pid is not None else ""
+            settings["serial_port_serial_number"] = info.serial_number or ""
 
     def _mapping_led_count_changed(self, count: int) -> None:
         popout = self.mapping_popouts.get(self._current().id)
@@ -1145,8 +1313,33 @@ class MainWindow(QMainWindow):
         self.midi_combo.clear()
         self.midi_combo.addItems(names)
         self.midi_combo.setCurrentText(current)
+        self._reload_serial_ports()
+
+    def _reload_serial_ports(self) -> None:
+        current = ""
+        if hasattr(self, "serial_combo"):
+            current = str(self.serial_combo.currentData() or self.serial_combo.currentText())
+        self.serial_combo.clear()
+        self.serial_port_infos = {}
+        for info in list_serial_ports():
+            self.serial_port_infos[info.device] = info
+            self.serial_combo.addItem(describe_serial_port(info), info.device)
+        if current:
+            index = self.serial_combo.findData(current)
+            if index >= 0:
+                self.serial_combo.setCurrentIndex(index)
+            else:
+                self.serial_combo.setCurrentText(current)
+        self._refresh_connection_mode()
+        message = f"Found {len(self.serial_port_infos)} COM port{'s' if len(self.serial_port_infos) != 1 else ''}."
+        self.connection_test_status.setText(message)
+        self._append_log(message)
 
     def _create_virtual_port(self) -> None:
+        driver_available, driver_message = virtual_midi_driver_available()
+        if not driver_available:
+            QMessageBox.warning(self, "loopMIDI required", driver_message)
+            return
         name, accepted = PortNameDialog.get_name(self)
         if not accepted:
             return
@@ -1195,14 +1388,76 @@ class MainWindow(QMainWindow):
         self.status_label.setStyleSheet(f"color: {LIME if running else '#ffffff'}; font-weight: 800;")
 
     def _test_connection(self) -> None:
+        if self.output_mode_combo.currentText() == "Wired":
+            self._test_serial_connection()
+            return
         try:
             ip = self.fields["wled_ip"].text().strip()  # type: ignore[union-attr]
             port = self.fields["wled_port"].value()  # type: ignore[union-attr]
             with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
                 sock.sendto(bytes([2, 2, 0, 120, 255]), (ip, port))
             self._append_log(f"Sent test packet to {ip}:{port}.")
+            self.connection_test_status.setText(f"Wireless test packet sent to {ip}:{port}.")
         except OSError as exc:
+            self.connection_test_status.setText(f"Wireless test failed: {exc}")
             QMessageBox.critical(self, "Test failed", str(exc))
+
+    def _test_serial_connection(self) -> None:
+        port = str(self.serial_combo.currentData() or self.serial_combo.currentText()).strip()
+        if not port:
+            self.connection_test_status.setText("Choose a COM port first.")
+            QMessageBox.warning(self, "Test failed", "Choose a COM port first.")
+            return
+        baudrate = int(self.fields["serial_baudrate"].currentText())  # type: ignore[union-attr]
+        led_count = int(self.fields["led_count"].value())  # type: ignore[union-attr]
+        start_delay_ms = int(self.fields["serial_start_delay_ms"].value())  # type: ignore[union-attr]
+        payload = build_serial_test_frame(led_count)
+        test_duration_s = 4.0
+        frame_interval_s = 1.0 / 30.0
+        try:
+            import serial
+
+            with serial.Serial(
+                port=port,
+                baudrate=baudrate,
+                bytesize=serial.EIGHTBITS,
+                parity=serial.PARITY_NONE,
+                stopbits=serial.STOPBITS_ONE,
+                timeout=0,
+                write_timeout=1.0,
+                rtscts=False,
+                dsrdtr=False,
+                xonxoff=False,
+            ) as serial_port:
+                for name in ("setDTR", "setRTS"):
+                    method = getattr(serial_port, name, None)
+                    if callable(method):
+                        try:
+                            method(False)
+                        except Exception:
+                            pass
+                if start_delay_ms:
+                    time.sleep(start_delay_ms / 1000.0)
+                deadline = time.monotonic() + test_duration_s
+                frames_sent = 0
+                while time.monotonic() < deadline:
+                    written = serial_port.write(payload)
+                    if written != len(payload):
+                        raise OSError(f"Serial write incomplete: {written}/{len(payload)} bytes")
+                    serial_port.flush()
+                    frames_sent += 1
+                    time.sleep(frame_interval_s)
+            self.connection_test_status.setText(
+                f"Serial test frame sent to {port}: {frames_sent} frames, {led_count} LEDs at {baudrate}."
+            )
+            self._append_log(
+                f"Serial test frame sent to {port}: {frames_sent} frames, "
+                f"{led_count} LEDs, {len(payload)} bytes/frame at {baudrate}."
+            )
+        except Exception as exc:  # pylint: disable=broad-except
+            message = describe_serial_error(port, exc)
+            self.connection_test_status.setText(f"Serial test failed: {message}")
+            QMessageBox.critical(self, "Serial test failed", message)
 
     def _find_wled(self) -> None:
         dialog = QDialog(self)

@@ -22,6 +22,17 @@ class QtModelTests(unittest.TestCase):
             self.assertEqual("Piano", workspace.instances[0].settings["midi_port"])
             self.assertFalse(workspace.instances[0].running)
 
+    def test_default_settings_include_serial_output_options(self) -> None:
+        workspace = BridgeWorkspace.default()
+        settings = workspace.instances[0].settings
+
+        self.assertEqual("udp", settings["output_mode"])
+        self.assertEqual("", settings["serial_port"])
+        self.assertEqual(115200, settings["serial_baudrate"])
+        self.assertEqual(60, settings["serial_fps"])
+        self.assertTrue(settings["serial_auto_reconnect"])
+        self.assertTrue(settings["serial_blackout_on_disconnect"])
+
     def test_add_instance_selects_new_stopped_bridge(self) -> None:
         workspace = BridgeWorkspace.default()
 

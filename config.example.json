@@ -1,6 +1,7 @@
 {
   "wled_ip": "192.168.1.100",
   "wled_port": 21324,
+  "output_mode": "udp",
   "midi_port": "loopMIDI",
   "led_count": 64,
   "base_note": 36,
@@ -10,12 +11,17 @@
   "midi_read_burst": 64,
   "color_mode": "velocity_palette",
   "fixed_color": "0,120,255",
-<<<<<<< HEAD
   "velocity_palette_file": "palettes/Default",
   "scale_velocity_palette_to_full": false,
   "led_layout_positions": [],
-=======
-  "velocity_palette_file": "palettes/velocity_palette.txt",
->>>>>>> eabdd911b25d79a2bbd5c264e3d24a69dda49ce7
-  "verbose": false
+  "verbose": false,
+  "serial_port": "",
+  "serial_port_vid": "",
+  "serial_port_pid": "",
+  "serial_port_serial_number": "",
+  "serial_baudrate": 115200,
+  "serial_fps": 60,
+  "serial_auto_reconnect": true,
+  "serial_blackout_on_disconnect": true,
+  "serial_start_delay_ms": 1500
 }
