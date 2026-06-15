@@ -14,6 +14,20 @@ class RuntimeTests(unittest.TestCase):
         ):
             self.assertEqual(Path(r"C:\Portable W-MIDI"), runtime.app_root())
 
+    def test_app_root_uses_release_folder_for_macos_app_bundle(self) -> None:
+        with (
+            patch.object(sys, "frozen", True, create=True),
+            patch.object(
+                sys,
+                "executable",
+                r"C:\release\W-MIDI-v1.2.0-macOS-arm64\W-MIDI.app\Contents\MacOS\W-MIDI",
+            ),
+        ):
+            self.assertEqual(
+                Path(r"C:\release\W-MIDI-v1.2.0-macOS-arm64"),
+                runtime.app_root(),
+            )
+
     def test_bridge_prefix_uses_frozen_executable_cli_mode(self) -> None:
         with (
             patch.object(sys, "frozen", True, create=True),
