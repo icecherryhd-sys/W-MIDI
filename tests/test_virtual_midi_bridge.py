@@ -1,4 +1,5 @@
 import socket
+import time
 import unittest
 
 import mido
@@ -15,7 +16,14 @@ class VirtualMidiBridgeTests(unittest.TestCase):
         try:
             sender.sendto(b"\x90\x3c\x7f", receiver.getsockname())
 
-            messages = read_virtual_midi_messages(receiver, mido.Parser(), 64)
+            parser = mido.Parser()
+            messages = []
+            deadline = time.monotonic() + 1.0
+            while time.monotonic() < deadline:
+                messages = read_virtual_midi_messages(receiver, parser, 64)
+                if messages:
+                    break
+                time.sleep(0.01)
 
             self.assertEqual([mido.Message("note_on", note=60, velocity=127)], messages)
         finally:
