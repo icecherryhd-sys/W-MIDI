@@ -53,6 +53,10 @@ class QtGuiSourceTests(unittest.TestCase):
         ]
 
         self.assertIn('QPushButton("Create Midi Port")', connection_card_source)
+        self.assertLess(
+            connection_card_source.index("if not IS_MACOS:"),
+            connection_card_source.index('QPushButton("Create Midi Port")'),
+        )
         self.assertIn('QPushButton("Test Connection")', connection_card_source)
         self.assertIn("QSpinBox::up-button, QSpinBox::down-button", source)
         self.assertIn('button = QPushButton(str(index))', source)
