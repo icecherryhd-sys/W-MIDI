@@ -70,6 +70,7 @@ from midi_wled_bridge.virtual_midi import VirtualMidiError, VirtualMidiPortManag
 CONFIG_PATH = Path(REPO_ROOT) / "config.json"
 LIME = "#a8ff4f"
 ORANGE = "#ff9d1e"
+IS_MACOS = sys.platform == "darwin"
 WINDOWS_FONT_FILES = (
     Path(os.environ.get("WINDIR", r"C:\Windows")) / "Fonts" / "segoeui.ttf",
     Path(os.environ.get("WINDIR", r"C:\Windows")) / "Fonts" / "arial.ttf",
@@ -862,9 +863,10 @@ class MainWindow(QMainWindow):
         self.test_connection_button = QPushButton("Test Connection")
         self.test_connection_button.clicked.connect(self._test_connection)
         card.layout.addWidget(self.test_connection_button)
-        create_port = QPushButton("Create Midi Port")
-        create_port.clicked.connect(self._create_virtual_port)
-        card.layout.addWidget(create_port)
+        if not IS_MACOS:
+            create_port = QPushButton("Create Midi Port")
+            create_port.clicked.connect(self._create_virtual_port)
+            card.layout.addWidget(create_port)
         self.connection_test_status = QLabel("Wireless mode sends WLED UDP realtime packets.")
         self.connection_test_status.setObjectName("muted")
         card.layout.addWidget(self.connection_test_status)
@@ -1489,7 +1491,7 @@ class MainWindow(QMainWindow):
     def _open_help(self) -> None:
         try:
             open_readme_file()
-        except OSError as exc:
+        except Exception as exc:  # pylint: disable=broad-except
             QMessageBox.critical(self, "README could not be opened", str(exc))
 
     def closeEvent(self, event: QCloseEvent) -> None:  # noqa: N802 - Qt naming

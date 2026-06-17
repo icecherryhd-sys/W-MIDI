@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import os
 import socket
+import subprocess
+import sys
 
 from midi_wled_bridge.runtime import app_root, bridge_command_prefix
 
@@ -21,7 +23,13 @@ def app_icon_path() -> str:
 
 
 def open_readme_file() -> None:
-    os.startfile(readme_txt_path())
+    path = readme_txt_path()
+    if sys.platform.startswith("win"):
+        os.startfile(path)  # type: ignore[attr-defined]
+    elif sys.platform == "darwin":
+        subprocess.run(["open", path], check=True)
+    else:
+        subprocess.run(["xdg-open", path], check=True)
 
 
 def find_available_loopback_udp_port() -> int:
